@@ -1,0 +1,85 @@
+#! /usr/local/bin/vvp
+:ivl_version "12.0 (stable)" "(v12_0)";
+:ivl_delay_selection "TYPICAL";
+:vpi_time_precision + 0;
+:vpi_module "/usr/local/lib/ivl/system.vpi";
+:vpi_module "/usr/local/lib/ivl/vhdl_sys.vpi";
+:vpi_module "/usr/local/lib/ivl/vhdl_textio.vpi";
+:vpi_module "/usr/local/lib/ivl/v2005_math.vpi";
+:vpi_module "/usr/local/lib/ivl/va_math.vpi";
+S_0x5584cb653c70 .scope module, "sign_extend_tb" "sign_extend_tb" 2 1;
+ .timescale 0 0;
+v0x5584cb67c5c0_0 .var "in", 7 0;
+v0x5584cb67c680_0 .net "out", 15 0, L_0x5584cb67ccd0;  1 drivers
+S_0x5584cb664a60 .scope module, "uut" "sign_extend_8_to_16" 2 5, 3 1 0, S_0x5584cb653c70;
+ .timescale 0 0;
+    .port_info 0 /INPUT 8 "in";
+    .port_info 1 /OUTPUT 16 "out";
+L_0x5584cb67d050 .functor BUFZ 8, v0x5584cb67c5c0_0, C4<00000000>, C4<00000000>, C4<00000000>;
+v0x5584cb67c200_0 .net *"_ivl_20", 7 0, L_0x5584cb67d050;  1 drivers
+v0x5584cb67c300_0 .net "in", 7 0, v0x5584cb67c5c0_0;  1 drivers
+v0x5584cb67c3e0_0 .net "msb", 0 0, L_0x5584cb67d1a0;  1 drivers
+v0x5584cb67c480_0 .net "out", 15 0, L_0x5584cb67ccd0;  alias, 1 drivers
+LS_0x5584cb67ccd0_0_0 .concat8 [ 8 1 1 1], L_0x5584cb67d050, L_0x5584cb67c720, L_0x5584cb67c790, L_0x5584cb67c880;
+LS_0x5584cb67ccd0_0_4 .concat8 [ 1 1 1 1], L_0x5584cb67c910, L_0x5584cb67c9d0, L_0x5584cb67ca90, L_0x5584cb67cb50;
+LS_0x5584cb67ccd0_0_8 .concat8 [ 1 0 0 0], L_0x5584cb67cc10;
+L_0x5584cb67ccd0 .concat8 [ 11 4 1 0], LS_0x5584cb67ccd0_0_0, LS_0x5584cb67ccd0_0_4, LS_0x5584cb67ccd0_0_8;
+L_0x5584cb67d1a0 .part v0x5584cb67c5c0_0, 7, 1;
+S_0x5584cb664c40 .scope generate, "extend_bits[8]" "extend_bits[8]" 3 12, 3 12 0, S_0x5584cb664a60;
+ .timescale 0 0;
+P_0x5584cb664e20 .param/l "i" 1 3 12, +C4<01000>;
+L_0x5584cb67c720 .functor BUFZ 1, L_0x5584cb67d1a0, C4<0>, C4<0>, C4<0>;
+v0x5584cb6553c0_0 .net *"_ivl_1", 0 0, L_0x5584cb67c720;  1 drivers
+S_0x5584cb67aab0 .scope generate, "extend_bits[9]" "extend_bits[9]" 3 12, 3 12 0, S_0x5584cb664a60;
+ .timescale 0 0;
+P_0x5584cb67acd0 .param/l "i" 1 3 12, +C4<01001>;
+L_0x5584cb67c790 .functor BUFZ 1, L_0x5584cb67d1a0, C4<0>, C4<0>, C4<0>;
+v0x5584cb654f00_0 .net *"_ivl_1", 0 0, L_0x5584cb67c790;  1 drivers
+S_0x5584cb67add0 .scope generate, "extend_bits[10]" "extend_bits[10]" 3 12, 3 12 0, S_0x5584cb664a60;
+ .timescale 0 0;
+P_0x5584cb67afd0 .param/l "i" 1 3 12, +C4<01010>;
+L_0x5584cb67c880 .functor BUFZ 1, L_0x5584cb67d1a0, C4<0>, C4<0>, C4<0>;
+v0x5584cb654a40_0 .net *"_ivl_1", 0 0, L_0x5584cb67c880;  1 drivers
+S_0x5584cb67b0d0 .scope generate, "extend_bits[11]" "extend_bits[11]" 3 12, 3 12 0, S_0x5584cb664a60;
+ .timescale 0 0;
+P_0x5584cb67b2d0 .param/l "i" 1 3 12, +C4<01011>;
+L_0x5584cb67c910 .functor BUFZ 1, L_0x5584cb67d1a0, C4<0>, C4<0>, C4<0>;
+v0x5584cb654610_0 .net *"_ivl_1", 0 0, L_0x5584cb67c910;  1 drivers
+S_0x5584cb67b3f0 .scope generate, "extend_bits[12]" "extend_bits[12]" 3 12, 3 12 0, S_0x5584cb664a60;
+ .timescale 0 0;
+P_0x5584cb67b640 .param/l "i" 1 3 12, +C4<01100>;
+L_0x5584cb67c9d0 .functor BUFZ 1, L_0x5584cb67d1a0, C4<0>, C4<0>, C4<0>;
+v0x5584cb654180_0 .net *"_ivl_1", 0 0, L_0x5584cb67c9d0;  1 drivers
+S_0x5584cb67b760 .scope generate, "extend_bits[13]" "extend_bits[13]" 3 12, 3 12 0, S_0x5584cb664a60;
+ .timescale 0 0;
+P_0x5584cb67b960 .param/l "i" 1 3 12, +C4<01101>;
+L_0x5584cb67ca90 .functor BUFZ 1, L_0x5584cb67d1a0, C4<0>, C4<0>, C4<0>;
+v0x5584cb656820_0 .net *"_ivl_1", 0 0, L_0x5584cb67ca90;  1 drivers
+S_0x5584cb67ba80 .scope generate, "extend_bits[14]" "extend_bits[14]" 3 12, 3 12 0, S_0x5584cb664a60;
+ .timescale 0 0;
+P_0x5584cb67bc80 .param/l "i" 1 3 12, +C4<01110>;
+L_0x5584cb67cb50 .functor BUFZ 1, L_0x5584cb67d1a0, C4<0>, C4<0>, C4<0>;
+v0x5584cb67bd60_0 .net *"_ivl_1", 0 0, L_0x5584cb67cb50;  1 drivers
+S_0x5584cb67be40 .scope generate, "extend_bits[15]" "extend_bits[15]" 3 12, 3 12 0, S_0x5584cb664a60;
+ .timescale 0 0;
+P_0x5584cb67c040 .param/l "i" 1 3 12, +C4<01111>;
+L_0x5584cb67cc10 .functor BUFZ 1, L_0x5584cb67d1a0, C4<0>, C4<0>, C4<0>;
+v0x5584cb67c120_0 .net *"_ivl_1", 0 0, L_0x5584cb67cc10;  1 drivers
+    .scope S_0x5584cb653c70;
+T_0 ;
+    %pushi/vec4 85, 0, 8;
+    %store/vec4 v0x5584cb67c5c0_0, 0, 8;
+    %delay 10, 0;
+    %vpi_call 2 14 "$display", "Input: %b, Output: %b", v0x5584cb67c5c0_0, v0x5584cb67c680_0 {0 0 0};
+    %pushi/vec4 170, 0, 8;
+    %store/vec4 v0x5584cb67c5c0_0, 0, 8;
+    %delay 10, 0;
+    %vpi_call 2 19 "$display", "Input: %b, Output: %b", v0x5584cb67c5c0_0, v0x5584cb67c680_0 {0 0 0};
+    %end;
+    .thread T_0;
+# The file index is used to find the file name in the following table.
+:file_names 4;
+    "N/A";
+    "<interactive>";
+    "sign_extension_tb.v";
+    "sign_extension.v";
