@@ -10,6 +10,7 @@ div
 -- Logic
 and
 or
+not
 sll
 slr
 
@@ -17,8 +18,7 @@ slr
 lw
 sw
 la
-push
-pop
+mov
 
 -- Branching
 jmp
