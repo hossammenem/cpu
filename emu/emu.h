@@ -5,6 +5,44 @@
 #include <string.h>
 #include <stdint.h>
 
+enum OP_CODE {
+	I_ADD,
+	I_SUB,
+	I_MULT,
+	I_DIV,
+	I_AND,
+	I_OR,
+	I_NOT,
+	I_SLL,
+	I_SLR,
+	I_LW,
+	I_SW,
+	I_LA,
+	I_MOV,
+	I_JMP,
+	I_JMPZ,
+	I_JMPC
+};
+
+enum REG {
+	R_T0,
+	R_T1,
+	R_T2,
+	R_T3,
+	R_A0,
+	R_A1,
+	R_A2,
+	R_A3,
+	R_S0,
+	R_S1,
+	R_S2,
+	R_S3,
+	R_GP,
+	R_SP,
+	R_FP,
+	R_RA
+};
+
 typedef struct {
 	// Temporary registers (caller-saved)
 	uint16_t r_t0;    // r0
