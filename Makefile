@@ -9,7 +9,7 @@ BUILD_DIR = build
 # Source and object files
 SRC = $(SRC_DIR)/emu.c
 OBJ = $(BUILD_DIR)/emu.o
-EXECUTABLE = prog
+EXECUTABLE = emu.out
 
 # Default target
 all: $(BUILD_DIR) $(EXECUTABLE)
