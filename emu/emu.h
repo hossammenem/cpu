@@ -43,6 +43,21 @@ enum REG {
 	R_RA
 };
 
+typedef enum {
+    OPERAND_REGISTER,
+    OPERAND_IMMEDIATE
+} operand_type_t;
+
+typedef struct {
+    uint8_t op_code;
+    uint8_t rd;           // Destination register
+    operand_type_t src_type;  // Type of source (register or immediate)
+    union {
+        uint8_t rs;       // Source register if src_type is OPERAND_REGISTER
+        uint16_t imm;     // Immediate value if src_type is OPERAND_IMMEDIATE
+    } src;
+} instruction_t;
+
 typedef struct {
 	// Temporary registers (caller-saved)
 	uint16_t r_t0;    // r0
@@ -69,7 +84,7 @@ typedef struct {
 	uint16_t r_ra;    // r15 - Return Address
 
 	uint16_t pc;      
-	uint16_t memory[65536];  // 64K memory
+	instruction_t memory[65536];  // 64K memory
 } cpu_t;
 
 // print all registers
