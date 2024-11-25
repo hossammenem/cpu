@@ -37,7 +37,6 @@ int apply_arithmatic(int operation, uint16_t **registers, instruction_t current_
 			break;
 
 		default:
-			printf("not arithemtic tho: %u\n", operation);
 			return -1;
 	}
 
@@ -45,7 +44,7 @@ int apply_arithmatic(int operation, uint16_t **registers, instruction_t current_
 }
 
 int simple_arithmatic(instruction_t current_instruction, uint16_t *registers[], int operation) {
-	if (current_instruction.rd >= 16) {
+	if (current_instruction.rd > 16) {
 		printf("Invalid destination register\n");
 		return -1;
 	}
@@ -69,7 +68,7 @@ int simple_arithmatic(instruction_t current_instruction, uint16_t *registers[], 
 	return -1;
 }
 
-int execute(cpu_t *cpu) {
+int eumulate(cpu_t *cpu) {
 	// so we access cpu registers using the enum values
 	uint16_t* registers[] = {
 		&cpu->r_t0, &cpu->r_t1, &cpu->r_t2, &cpu->r_t3,
@@ -80,9 +79,9 @@ int execute(cpu_t *cpu) {
 
 	// should be for the whole text segment or till we see NULL
 
-	for(int i = 0x0000; i <= 0x3FFF; i+=16) {
+	for(int i = 0x000; i <= 0x3FFF; i+=16) {
 		instruction_t current_instruction = cpu->memory[cpu->pc];
-		if(current_instruction.op_code) {
+		if(!current_instruction.op_code) {
 			printf("we reached the end at: 0x%04x\n", i);
 			return 0;
 		}
@@ -98,18 +97,48 @@ int execute(cpu_t *cpu) {
 				cpu->pc+=16;
 				break;
 
-			case I_LW:
-			case I_SW:
+			case I_CMP:
 			case I_LA:
 
+			case I_INT:
+				if (current_instruction.rd > 16) {
+					printf("Invalid destination register\n");
+					return -1;
+				}
+
+				if (current_instruction.src_type == OPERAND_IMMEDIATE && current_instruction.src.imm == 0x80) {
+					uint16_t arg0 = cpu->r_a1;
+					uint16_t arg1 = cpu->r_a2;
+					uint16_t arg2 = cpu->r_a3;
+					uint16_t sys_call_num = cpu->r_s1;
+
+					switch(sys_call_num) {
+						case 1:
+							printf("%u\n", arg0);
+							break;
+
+						default:
+							printf("invalid syscall number %u\n", sys_call_num);
+							return -1;
+					}
+
+				} else {
+					printf("Invalid source type for 'int' instruction\n");
+					return -1;
+				}
+
+				cpu->pc+=16;
+				break;
+				
+
 			case I_MOV:
-				if (current_instruction.rd >= 16) {
+				if (current_instruction.rd > 16) {
 					printf("Invalid destination register\n");
 					return -1;
 				}
 
 				if (current_instruction.src_type == OPERAND_REGISTER) {
-					if (current_instruction.src.rs >= 16) {
+					if (current_instruction.src.rs > 16) {
 						printf("Invalid source register\n");
 						return -1;
 					}
@@ -140,21 +169,28 @@ int execute(cpu_t *cpu) {
 	return 1;
 }
 
+void test_program_print(int start, cpu_t *cpu) {
+	cpu->memory[start] = (instruction_t){ .op_code = I_MOV, .src_type = OPERAND_IMMEDIATE, .src.imm = 1, .rd = R_S1 };
+	cpu->memory[start+0x10] = (instruction_t){ .op_code = I_MOV, .src_type = OPERAND_IMMEDIATE, .src.imm = 69, .rd = R_A1 };
+	cpu->memory[start+0x20] = (instruction_t){ .op_code = I_INT, .src_type = OPERAND_IMMEDIATE, .src.imm = 0x80 };
+}
+
+const uint8_t TEXT_SECTION_START = 0x000;
+
 int main() {
 	cpu_t CPU;
-	CPU.r_t0 = 12;
 
-	// dump_stack(&CPU, "head", 40);
-
-
-	CPU.pc = 0x000; // set PC to text start, which is where the start of the instructions is located
+	CPU.pc = TEXT_SECTION_START; // set PC to text start, which is where the start of the instructions is located ( aka .text section )
 	
 	// we currently store the parsed instruction so we skip the assembler step for now.
-	CPU.memory[0x000] = (instruction_t){ .op_code = I_MOV, .src_type = OPERAND_IMMEDIATE, .src.imm = 13, .rd = R_T0 };
-	CPU.memory[0x0010] = (instruction_t){ .op_code = I_NOT, .rd = R_T2 };
+	CPU.memory[TEXT_SECTION_START] = (instruction_t){ .op_code = I_MOV, .src_type = OPERAND_IMMEDIATE, .src.imm = 13, .rd = R_T0 };
+	CPU.memory[TEXT_SECTION_START+0x0010] = (instruction_t){ .op_code = I_NOT, .rd = R_T2 };
 
-	int exit_code = execute(&CPU);
+	test_program_print(TEXT_SECTION_START+0x0020, &CPU);
+
+	int exit_code = eumulate(&CPU);
 	printf("program exited with code: %d\n", exit_code);
 
 	return 1;
 }
+

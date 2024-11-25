@@ -15,13 +15,13 @@ enum OP_CODE {
 	I_NOT,
 	I_SLL,
 	I_SLR,
-	I_LW,
-	I_SW,
+	I_CMP,
 	I_LA,
 	I_MOV,
 	I_JMP,
 	I_JMPZ,
-	I_JMPC
+	I_JMPC,
+	I_INT
 };
 
 enum REG {
@@ -30,10 +30,24 @@ enum REG {
 	R_T2,
 	R_T3,
 	R_A0,
+	/**
+ * @brief used in syscalls as arg 0
+ */
 	R_A1,
+
+	/**
+ * @brief used in syscalls as arg 1
+ */
 	R_A2,
+	/**
+ * @brief used in syscalls as arg 2
+ */
 	R_A3,
 	R_S0,
+
+	/**
+ * @brief used in syscalls as sys call number
+ */
 	R_S1,
 	R_S2,
 	R_S3,
@@ -66,13 +80,30 @@ typedef struct {
 	uint16_t r_t3;    // r3
 
 	// Argument/Return registers
+
 	uint16_t r_a0;    // r4 - First argument/return value
+	
+	/**
+ * @brief used in syscalls as arg 0
+ */
 	uint16_t r_a1;    // r5 - Second argument
+	
+	/**
+ * @brief used in syscalls as arg 1
+ */
 	uint16_t r_a2;    // r6 - Third argument
+	
+	/**
+ * @brief used in syscalls as arg 2
+ */
 	uint16_t r_a3;    // r7 - Fourth argument
 
 	// Saved registers (callee-saved)
 	uint16_t r_s0;    // r8
+
+	/**
+ * @brief used in syscalls syscall number
+ */
 	uint16_t r_s1;    // r9
 	uint16_t r_s2;    // r10
 	uint16_t r_s3;    // r11
