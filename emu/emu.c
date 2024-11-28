@@ -1,6 +1,102 @@
-#include "stdio.h"
+#include <stdio.h>
 #include <stdint.h>
+#include <unistd.h>
+#include <stdbool.h>
+#include <string.h>
+#include <stdint.h>
+#include <time.h>
+
 #include "./emu.h" 
+
+void dump_registers(cpu_t *cpu) {
+	printf("=== CPU Registers ===\n");
+
+	// Temporary registers
+	printf("\nTemporary Registers:\n");
+	printf("t0: 0x%04x (%5u)    t1: 0x%04x (%5u)\n", 
+				cpu->r_t0, cpu->r_t0, cpu->r_t1, cpu->r_t1);
+	printf("t2: 0x%04x (%5u)    t3: 0x%04x (%5u)\n", 
+				cpu->r_t2, cpu->r_t2, cpu->r_t3, cpu->r_t3);
+
+	// Argument registers
+	printf("\nArgument Registers:\n");
+	printf("a0: 0x%04x (%5u)    a1: 0x%04x (%5u)\n", 
+				cpu->r_a0, cpu->r_a0, cpu->r_a1, cpu->r_a1);
+	printf("a2: 0x%04x (%5u)    a3: 0x%04x (%5u)\n", 
+				cpu->r_a2, cpu->r_a2, cpu->r_a3, cpu->r_a3);
+
+	// Saved registers
+	printf("\nSaved Registers:\n");
+	printf("s0: 0x%04x (%5u)    s1: 0x%04x (%5u)\n", 
+				cpu->r_s0, cpu->r_s0, cpu->r_s1, cpu->r_s1);
+	printf("s2: 0x%04x (%5u)    s3: 0x%04x (%5u)\n", 
+				cpu->r_s2, cpu->r_s2, cpu->r_s3, cpu->r_s3);
+
+	// Special registers
+	printf("\nSpecial Registers:\n");
+	printf("pc: 0x%04x (%5u)    sp: 0x%04x (%5u)\n", 
+				cpu->pc, cpu->pc, cpu->r_sp, cpu->r_sp);
+	printf("fp: 0x%04x (%5u)    ra: 0x%04x (%5u)\n", 
+				cpu->r_fp, cpu->r_fp, cpu->r_ra, cpu->r_ra);
+	printf("gp: 0x%04x (%5u)\n", 
+				cpu->r_gp, cpu->r_gp);
+
+	printf("\n===================\n");
+}
+
+void dump_stack(cpu_t *cpu, char* start, int range) {
+	FILE *pager;
+
+	if(!range) {
+		// -R allows color codes if you add them later
+		pager	= popen("less -R", "w");  
+
+		if (!pager) return;
+		range = 32 << 10;
+	}
+
+	if(start == NULL) {
+		start = "head";
+	}
+
+	bool is_head = strcmp(start, "head") == 0;
+
+	int step_multiplier = is_head ? -1 : 1;
+	int step = (step_multiplier * 16);
+
+	int i_start = is_head ? 64 << 10 : 32 << 10;
+	int i_end = is_head ? (64 << 10) - range : (32 << 10) + range;
+
+	for(int i = i_start; i >= i_end; i+=step) {
+		if(pager) {
+			fprintf(pager, "0x%04x: 0x%04x\n", i, cpu->memory[i]);
+		} else {
+			printf("0x%04x: 0x%04x\n", i, cpu->memory[i]);
+		}
+	}
+
+	if(pager) {
+		pclose(pager);
+	}
+}
+
+void init_cpu(emulator_t *emulator) {
+    memset(&emulator->cpu, 0, sizeof(cpu_t));
+    emulator->frequency = CPU_FREQUENCY;
+    emulator->cpu.pc = TEXT_SECTION_START;
+    
+    // Initialize file descriptors
+    emulator->file_descriptors[0] = stdin;   // Standard input
+    emulator->file_descriptors[1] = stdout;  // Standard output
+    emulator->file_descriptors[2] = stderr;  // Standard error
+    emulator->num_open_files = 3;
+}
+
+uint64_t get_current_time_us() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (ts.tv_sec * 1000000) + (ts.tv_nsec / 1000);
+}
 
 int apply_arithmatic(int operation, uint16_t **registers, instruction_t current_instruction) {
 	switch (operation) {
@@ -68,7 +164,12 @@ int simple_arithmatic(instruction_t current_instruction, uint16_t *registers[], 
 	return -1;
 }
 
-int eumulate(cpu_t *cpu) {
+
+
+
+int fetch_decode_execute(emulator_t *emulator) {
+	cpu_t *cpu = &emulator->cpu; // this should be chagned, adding it only because it was already here before
+
 	// so we access cpu registers using the enum values
 	uint16_t* registers[] = {
 		&cpu->r_t0, &cpu->r_t1, &cpu->r_t2, &cpu->r_t3,
@@ -101,35 +202,95 @@ int eumulate(cpu_t *cpu) {
 			case I_LA:
 
 			case I_INT:
-				if (current_instruction.rd > 16) {
-					printf("Invalid destination register\n");
-					return -1;
-				}
+				// the imm passed to the 'int' instruction should specifcy which register should we be reading
+				// or a sequence of registers or smth idk
+				// but we'll stick with 0x80 and one register for now
+				if (current_instruction.src_type == OPERAND_IMMEDIATE && 
+					current_instruction.src.imm == 0x80) {
 
-				if (current_instruction.src_type == OPERAND_IMMEDIATE && current_instruction.src.imm == 0x80) {
+					// this is half-assed but that's ok
+					uint16_t syscall_num = cpu->r_s1;
 					uint16_t arg0 = cpu->r_a1;
-					uint16_t arg1 = cpu->r_a2;
+					void *arg1 = &cpu->r_a2;
 					uint16_t arg2 = cpu->r_a3;
-					uint16_t sys_call_num = cpu->r_s1;
 
-					switch(sys_call_num) {
-						case 1:
+
+					// for when doing file operations:
+					// arg0 = file descriptor
+					// arg1 = buffer address
+					// arg2 = count
+					// TODO: there's some typecasting shit here that i haven't checked. CHECK IT.
+					switch(syscall_num) {
+						case SYS_EXIT:
+							return arg0; // Exit with provided code
+
+						case SYS_PRINT:
 							printf("%u\n", arg0);
-							break;
+						break;
+
+						case SYS_READ: 
+							if (arg0 < emulator->num_open_files && emulator->file_descriptors[arg0]) {
+								char buffer[1024];  // Temporary buffer
+								size_t count = arg2 > 1024 ? 1024 : arg2;
+								size_t read = fread(buffer, 1, count, emulator->file_descriptors[arg0]);
+
+								// Copy to emulated memory
+								for(size_t i = 0; i < read; i++) {
+									cpu->memory[(*(uint16_t *)arg1) + i].op_code = buffer[i];
+								}
+
+								cpu->r_a0 = read;  // Return number of bytes read
+							}
+						break;
+
+						case SYS_WRITE: 
+							// Similar to read but for writing
+							if (arg0 < emulator->num_open_files && emulator->file_descriptors[arg0]) {
+								char buffer[1024];
+								size_t count = arg2 > 1024 ? 1024 : arg2;
+
+								// Copy from emulated memory
+								for(size_t i = 0; i < count; i++) {
+									buffer[i] = cpu->memory[(*(uint16_t *)arg1) + i].op_code;
+								}
+
+								size_t written = fwrite(buffer, 1, count, emulator->file_descriptors[arg0]);
+								cpu->r_a0 = written;
+							}
+						break;
+
+						case SYS_OPEN:
+							if (arg0 < emulator->num_open_files && !emulator->file_descriptors[arg0]) {
+								FILE *f = fopen((const char *)arg1, "r");
+
+								if (f) {
+									emulator->file_descriptors[emulator->num_open_files] = f;
+									cpu->r_a0 = emulator->num_open_files++;  // Return file descriptor
+							} else {
+									cpu->r_a0 = -1;  // Return error
+								}
+							}
+
+						break;
+
+						case SYS_CLOSE: 
+							if (arg0 < emulator->num_open_files && emulator->file_descriptors[arg0]) {
+								fclose(emulator->file_descriptors[arg0]);
+								emulator->file_descriptors[arg0] = NULL;
+								cpu->r_a0 = 0;  // Success
+							} else {
+								cpu->r_a0 = -1;  // Error
+							}
+						break;
 
 						default:
-							printf("invalid syscall number %u\n", sys_call_num);
+							printf("invalid syscall number %u\n", syscall_num);
 							return -1;
 					}
-
-				} else {
-					printf("Invalid source type for 'int' instruction\n");
-					return -1;
 				}
-
-				cpu->pc+=16;
+				cpu->pc += 16;
 				break;
-				
+
 
 			case I_MOV:
 				if (current_instruction.rd > 16) {
@@ -157,7 +318,6 @@ int eumulate(cpu_t *cpu) {
 				break;
 
 			case I_JMP:
-			case I_JMPZ:
 			case I_JMPC:
 
 			default:
@@ -169,26 +329,50 @@ int eumulate(cpu_t *cpu) {
 	return 1;
 }
 
+int emulate(emulator_t *emulator) {
+	uint64_t start_time = get_current_time_us();
+	uint64_t expected_cycles = 0;
+
+	for(int i = 0x000; i <= 0x3FFF; i+=16) {
+		// Calculate expected time based on cycles
+		expected_cycles += CYCLES_PER_INSTRUCTION;
+		uint64_t expected_time = start_time + 
+			(expected_cycles * 1000000 / emulator->frequency);
+
+		// Wait if we're running too fast
+		uint64_t current_time = get_current_time_us();
+		if (current_time < expected_time) {
+			usleep(expected_time - current_time);
+		}
+
+		// fetch and decode code goes here
+		fetch_decode_execute(emulator);
+
+		emulator->clock_cycles += CYCLES_PER_INSTRUCTION;
+	}
+	return 1;
+}
+
 void test_program_print(int start, cpu_t *cpu) {
 	cpu->memory[start] = (instruction_t){ .op_code = I_MOV, .src_type = OPERAND_IMMEDIATE, .src.imm = 1, .rd = R_S1 };
 	cpu->memory[start+0x10] = (instruction_t){ .op_code = I_MOV, .src_type = OPERAND_IMMEDIATE, .src.imm = 69, .rd = R_A1 };
 	cpu->memory[start+0x20] = (instruction_t){ .op_code = I_INT, .src_type = OPERAND_IMMEDIATE, .src.imm = 0x80 };
 }
 
-const uint8_t TEXT_SECTION_START = 0x000;
 
 int main() {
-	cpu_t CPU;
+	emulator_t emulator;
+	cpu_t cpu = emulator.cpu;
 
-	CPU.pc = TEXT_SECTION_START; // set PC to text start, which is where the start of the instructions is located ( aka .text section )
-	
+	cpu.pc = TEXT_SECTION_START; // set PC to text start, which is where the start of the instructions is located ( aka .text section )
+
 	// we currently store the parsed instruction so we skip the assembler step for now.
-	CPU.memory[TEXT_SECTION_START] = (instruction_t){ .op_code = I_MOV, .src_type = OPERAND_IMMEDIATE, .src.imm = 13, .rd = R_T0 };
-	CPU.memory[TEXT_SECTION_START+0x0010] = (instruction_t){ .op_code = I_NOT, .rd = R_T2 };
+	cpu.memory[TEXT_SECTION_START] = (instruction_t){ .op_code = I_MOV, .src_type = OPERAND_IMMEDIATE, .src.imm = 13, .rd = R_T0 };
+	cpu.memory[TEXT_SECTION_START+0x0010] = (instruction_t){ .op_code = I_NOT, .rd = R_T2 };
 
-	test_program_print(TEXT_SECTION_START+0x0020, &CPU);
+	test_program_print(TEXT_SECTION_START+0x20, &cpu);
 
-	int exit_code = eumulate(&CPU);
+	int exit_code = emulate(&emulator);
 	printf("program exited with code: %d\n", exit_code);
 
 	return 1;

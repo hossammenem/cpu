@@ -15,15 +15,17 @@ sll
 slr
 
 -- Memory
-lw
-sw
 la
 mov
+push
+pop
 
 -- Branching
 jmp
-jmpz
 jmpc
+
+-- Interrupting
+int
 
 opCode[4] rs[4] rt[4] rd[4]
 
@@ -40,7 +42,10 @@ _As you can see here im inspired by the MIPS registers, but just got rid of the 
 ### memroy layout
 MEMORY_SIZE 0xFFFF (64KB)
 
-STACK     0xFFFF -> 0xC000 (16KB) // grows downwards
-HEAP      0x6000 -> 0xBFFF (24KB) // grows upwards
-TEXT      0x0000 -> 0x3FFF (16KB)
-DATA      0x4000 -> 0x5FFF (8KB)
+IVT       0xFC00 -> 0xFFFF (1KB)    // Interrupt Vector Table
+STACK     0xF000 -> 0xFBFF (3KB)    // Stack (grows downwards)
+HEAP      0xC000 -> 0xEFFF (12KB)   // Heap (grows upwards)
+I/O       0xB000 -> 0xBFFF (4KB)    // Memory-mapped I/O
+VRAM      0xA000 -> 0xAFFF (4KB)    // Video RAM
+DATA      0x6000 -> 0x9FFF (16KB)   // Data section
+TEXT      0x0000 -> 0x5FFF (24KB)   // Text section
