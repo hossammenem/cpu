@@ -1,9 +1,9 @@
 # Compiler settings
 CC = gcc
-CFLAGS = -Wall -Wextra -I./emu
+CFLAGS = -Wall -Wextra -I./src
 
 # Directories
-SRC_DIR = emu
+SRC_DIR = ./src
 BUILD_DIR = build
 
 # Source and object files
